@@ -1,7 +1,13 @@
 import time
 import urllib
 import urllib2
-from adc import *
+import Adafruit_GPIO.SPI as SPI
+import Adafruit_MCP3008
+#from adc import *
+
+SPI_PORT = 0
+SPI_DEVICE = 0
+mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
 
 def sendError(errorCode, hash, server):
 	print errorCode
@@ -39,10 +45,6 @@ def getSensorValue(port, sampleTime, mvPerAmp):
 	return ampsRms
 
 def postMeasurement(server, idSensor, value):
-	#print "posting measurement"
-	if(value < 0.05):
-		#print "value is less than 0.05"
-		return
 	try:
 		url = 'http://' + server + '/pi/measurement/' + str(idSensor) + '/' + str(value)
 		response = urllib.urlopen(url).read()

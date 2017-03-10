@@ -1,18 +1,13 @@
 import urllib
 import json
 import time
-import Adafruit_GPIO.SPI as SPI
-import Adafruit_MCP3008
-
-SPI_PORT = 0
-SPI_DEVICE = 0
-mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
 from helpers import *
 
 HASH = 'ij43mif5z8ec3w23z89jnv85e9o0p8e1'
 SERVER = '192.168.0.103'
 UPDATE_TIME = 60*1000
 SENSORBOX = []
+MIN_VALUE_TO_POST = 0.18
 
 url = 'http://' + SERVER + '/pi/getSensorBoxData/' + HASH
 
@@ -35,7 +30,7 @@ numOfSensors = len(SENSORBOX['sensors'])
 values = [0]*numOfSensors
 updatedAt = [time.time()*1000]*numOfSensors
 numOfReadings = [0]*numOfSensors
-
+lastUpdateWasZero = [False]*numOfSensors
 
 while(1):
 	#print "Inside while statement\n"
@@ -48,9 +43,14 @@ while(1):
 	for i in range(0, numOfSensors):
 		#print "inside second for loop\n"	
 		if(time.time()*1000 - updatedAt[i] > + UPDATE_TIME):
-			postMeasurement(SERVER, SENSORBOX['sensors'][i]['id'], values[i]/numOfReadings[i])
-			updatedAt[i] = time.time()*1000
-			numOfReadings[i] = 0
-			values[i] = 0
+			if not(lastUpdateWasZero[i] and values[i]/numOfReadings[i] < MIN_VALUE_TO_POST):
+				if values[i]/numOfReadings[i] < MIN_VALUE_TO_POST:
+					lastUpdateWasZero[i] = True
+				else:
+					lastUpdateWasZero[i] = False
+				postMeasurement(SERVER, SENSORBOX['sensors'][i]['id'], values[i]/numOfReadings[i])
+				updatedAt[i] = time.time()*1000
+				numOfReadings[i] = 0
+				values[i] = 0
 			
 			
